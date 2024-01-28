@@ -1,27 +1,122 @@
 <script lang="ts">
-    import { Button, Modal, Label, Input, Checkbox } from 'flowbite-svelte';
-    export let formModal = false;
+    import {Button, Modal, Label, Input, Toggle, InputAddon, ButtonGroup, Checkbox} from 'flowbite-svelte';
+    import {expensesStore} from '$lib/stores/expensesStore.ts'
+    import {DollarSolid, CalendarMonthSolid} from 'flowbite-svelte-icons';
+    import {onDestroy, onMount} from 'svelte';
+
+    export let modalOpen: boolean = false;
+    export let expenseId: number = null;
+
+    let expense: Expense = {};
+    let expenseActive : boolean = true;
+    const unsub = null;
+
+    onMount(() => {
+        if (expenseId) {
+            expensesStore.subscribe((expenses: Expense[]) => {
+                expense = expenses.find((expense: Expense) => expense.id === expenseId);
+            });
+        } else {
+            expense = {
+                active: true,
+                due_day: null,
+                amount: null,
+            };
+        }
+    });
+
+    onDestroy(() => {
+        if (unsub) {
+            unsub();
+        }
+    });
+
+    $: console.log(expense);
+    $: expenseActive = expense.active ? expense.active : false;
+    $: console.log(expenseActive)
+
+    function save() {
+        if (expense.id) {
+            expensesStore.update(expense)
+                .then(() => {
+                    modalOpen = false;
+                })
+                .catch((error: Error) => {
+                    console.error(error);
+                });
+        } else {
+            expensesStore.add(expense)
+                .then(() => {
+                    modalOpen = false;
+                })
+                .catch((error: Error) => {
+                    console.error(error);
+                });
+        }
+    }
+
+    // todo: add due day validation
+
 </script>
 
-<Modal bind:open={formModal} size="xs" autoclose={false} outsideclose class="w-full">
+<Modal bind:open={modalOpen} size="xs" autoclose={false} outsideclose class="w-full">
     <form class="flex flex-col space-y-6" action="#">
-        <h3 class="mb-4 text-xl font-medium text-gray-900 dark:text-white">Sign in to our platform</h3>
-        <Label class="space-y-2">
-            <span>Email</span>
-            <Input type="email" name="email" placeholder="name@company.com" required />
-        </Label>
-        <Label class="space-y-2">
-            <span>Your password</span>
-            <Input type="password" name="password" placeholder="•••••" required />
-        </Label>
-        <div class="flex items-start">
-            <Checkbox>Remember me</Checkbox>
-            <a href="/" class="ms-auto text-sm text-primary-700 hover:underline dark:text-primary-500"> Lost password? </a>
+        <h3 class="mb-4 text-xl font-medium text-gray-900 dark:text-white">Create/Edit Monthly Expense</h3>
+        <div class="flex flex-col-2 space-x-10">
+            <Label class="space-y-2">
+                <span>ID</span>
+                <Input type="number" name="id" value="{expenseId}" disabled/>
+            </Label>
+            <div>
+                <Label class="space-y-2">
+                    <span>Active</span>
+                    <Toggle
+                            bind:checked="{expenseActive}"
+                            on:change="{() => expense.active = !expense.active}"
+                            color="green"
+                            class="self-stretch pt-2.5"
+                    />
+                </Label>
+            </div>
         </div>
-        <Button type="submit" class="w-full1">Login to your account</Button>
-        <div class="text-sm font-medium text-gray-500 dark:text-gray-300">
-            Not registered? <a href="/" class="text-primary-700 hover:underline dark:text-primary-500"> Create account </a>
+        <Label class="space-y-2">
+            <span>Name</span>
+            <Input
+                    type="text"
+                    name="name"
+                    placeholder="Rent, Internet, etc"
+                    bind:value="{expense.name}"
+                    required/>
+        </Label>
+        <div class="mb-6">
+            <Label for="website-admin" class="block mb-2">Due day</Label>
+            <ButtonGroup class="w-full">
+                <InputAddon>
+                    <CalendarMonthSolid class="w-4 h-4 text-gray-500 dark:text-gray-400"/>
+                </InputAddon>
+                <Input
+                        type="number"
+                        name="due_day"
+                        placeholder="Which day of the mounth it is due"
+                        bind:value="{expense.due_day}"
+                        required/>
+            </ButtonGroup>
         </div>
+        <div class="mb-6">
+            <Label for="website-admin" class="block mb-2">Amount</Label>
+            <ButtonGroup class="w-full">
+                <InputAddon>
+                    <DollarSolid class="w-4 h-4 text-gray-500 dark:text-gray-400"/>
+                </InputAddon>
+                <Input
+                        type="number"
+                        name="amount"
+                        placeholder="100.00"
+                        bind:value="{expense.amount}"
+                        required/>
+            </ButtonGroup>
+        </div>
+        <Button type="submit" class="w-full1" on:click={save}>Save</Button>
     </form>
 </Modal>
 
