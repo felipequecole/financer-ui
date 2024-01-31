@@ -13,7 +13,8 @@
         Toggle
     } from "flowbite-svelte";
     import {expensesStore} from '$lib/stores/expensesStore.ts';
-    import {onDestroy} from "svelte";
+    import {onDestroy, createEventDispatcher} from "svelte";
+
 
     let expenses: Expenses[];
     let loading = false;
@@ -27,6 +28,8 @@
             unsub();
         }
     });
+
+    const expenseEdit = createEventDispatcher();
 
     function deleteExpense(id: number) {
         console.log(`Deleting ${id}`)
@@ -51,6 +54,11 @@
                 console.log(err);
                 loading = false;
             });
+    }
+
+    function editExpense(id: number) {
+        console.log(`Editing ${id}`);
+        expenseEdit('editExpense', {id});
     }
 
 </script>
@@ -79,13 +87,17 @@
                     <Toggle bind:checked={expense.active} color="green"
                             on:change={(event) => updateExpense(event, expense)}/>
                 </TableBodyCell>
-                <TableBodyCell class="grid-rows-2">
-                    <Button outline color="green" class="mr-2">
-                        <Icon src="{AiOutlineEdit}" className="fill-current h-6" size="1.5em"/>
-                    </Button>
-                    <Button outline color="red" on:click={() => deleteExpense(expense.id)}>
-                        <Icon src="{AiOutlineDelete}" className="fill-current h-6 w-6" size="1.5em"/>
-                    </Button>
+                <TableBodyCell class="grid-rows-2 ">
+                    <button class="link pr-4" on:click={() => editExpense(expense.id)}>Edit</button>
+                    <button class="link" on:click={() => deleteExpense(expense.id)}>Remove</button>
+                    <!--                    <Button outline color="green"  on:click={() => editExpense(expense.id)}>-->
+                    <!--&lt;!&ndash;                        <Icon src="{AiOutlineEdit}" className="fill-current h-6" size="1.5em"/>&ndash;&gt;-->
+                    <!--                        Edit-->
+                    <!--                    </Button>-->
+                    <!--                    <Button outline color="red" on:click={() => deleteExpense(expense.id)}>-->
+                    <!--&lt;!&ndash;                        <Icon src="{AiOutlineDelete}" className="fill-current h-6 w-6" size="1.5em"/>&ndash;&gt;-->
+                    <!--                        Delete-->
+                    <!--                    </Button>-->
                 </TableBodyCell>
             </TableBodyRow>
         {/each}

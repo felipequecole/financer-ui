@@ -4,7 +4,6 @@
     import {DollarSolid, CalendarMonthSolid} from 'flowbite-svelte-icons';
     import {onDestroy, onMount} from 'svelte';
 
-
     export let modalOpen: boolean = false;
     export let expenseId: number = null;
 
@@ -37,7 +36,7 @@
 
     $: console.log(expense);
     $: expenseActive = expense.active ? expense.active : false;
-    $: console.log(expenseActive);
+    $: console.log(expenseActive)
     $: dayValid = expense.due_day > 0 && expense.due_day <= 31;
     $: nameValid = expense.name && expense.name.length > 0;
     $: valid = dayValid && nameValid;
@@ -96,12 +95,13 @@
                     color="{nameValid ? 'base' : 'red'}"
                     required/>
             {#if !nameValid}
-                <Helper class='mt-2' color='red'><span class="font-medium">Invalid due day</span> Should be &gt 0 and &lt= 31.
+                <Helper class='mt-2' color='red'><span class="font-medium">Invalid due day</span> Should be &gt 0 and
+                    &lt= 31.
                 </Helper>
             {/if}
         </Label>
         <div class="mb-6">
-            <Label for="website-admin" class="block mb-2">Due day</Label>
+            <Label class="block mb-2">Due day</Label>
             <ButtonGroup class="w-full">
                 <InputAddon>
                     <CalendarMonthSolid class="w-4 h-4 text-gray-500 dark:text-gray-400"/>
@@ -115,12 +115,13 @@
                         required/>
             </ButtonGroup>
             {#if !dayValid}
-                <Helper class='mt-2' color='red'><span class="font-medium">Invalid due day</span> Should be &gt 0 and &lt= 31.
+                <Helper class='mt-2' color='red'><span class="font-medium">Invalid due day</span> Should be &gt 0 and
+                    &lt= 31.
                 </Helper>
             {/if}
         </div>
         <div class="mb-6">
-            <Label for="website-admin" class="block mb-2">Amount</Label>
+            <Label class="block mb-2">Amount</Label>
             <ButtonGroup class="w-full">
                 <InputAddon>
                     <DollarSolid class="w-4 h-4 text-gray-500 dark:text-gray-400"/>
