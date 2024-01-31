@@ -20,9 +20,9 @@
     </NavBrand>
     <NavHamburger/>
     <NavUl>
-        <NavLi href="/" active={true}>Home</NavLi>
+<!--        <NavLi href="/" active={true}>Home</NavLi>-->
+        <NavLi href="/month">Months</NavLi>
         <NavLi href="/expenses">Expenses</NavLi>
-        <!--        <NavLi href="/docs/components/navbar">Navbar</NavLi>-->
         <!--        <NavLi href="/pricing">Pricing</NavLi>-->
         <!--        <NavLi href="/contact">Contact</NavLi>-->
         <DarkMode size="md" {btnClass}/>

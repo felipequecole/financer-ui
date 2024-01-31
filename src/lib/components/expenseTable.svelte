@@ -42,8 +42,6 @@
     }
 
     function updateExpense(event, expense) {
-        console.log("update expense");
-        console.log(event);
         loading = true;
         expensesStore.update(expense)
             .then(() => {

@@ -1,24 +1,38 @@
 import {type Writable, writable, derived, type Readable} from 'svelte/store';
+import {browser} from '$app/environment';
 
 const store: Writable<Expense[]> = writable(await fetchExpenses());
 const sorted: Readable<Expense[]> = derived(store, (expense) => {
     return expense.sort((a, b) => a.id - b.id);
 })
 
+// TODO: we should connect to the websocket only on subscribe
+//  And disconnect when there are no more subscribers
+if (browser) {
+    const socket = new WebSocket("ws://localhost:8000/expenses/liveupdates")
+    socket.addEventListener("open", () => {
+        console.log("Opened")
+    });
+    socket.addEventListener("message", (event) => {
+        console.log("Message received")
+        const message = JSON.parse(event.data)
+        console.log(message)
+        if (message.action == 'delete') {
+            store.update((expenses) => {
+                return expenses.filter((e) => e.id !== message.data.id);
+            });
+        } else {
+            store.update((expenses) => {
+                let sliced = expenses.filter((e) => e.id !== message.data.id);
+                return [...sliced, message.data];
+            });
+        }
+    });
+}
+
 async function fetchExpenses(): Promise<Expense[]> {
     const res = await fetch('http://localhost:8000/expenses');
     return await res.json();
-}
-
-
-function resync() {
-    fetchExpenses()
-        .then((expenses) => {
-            store.update(() => {
-                return expenses;
-            });
-        })
-        .catch(err => console.log(err));
 }
 
 async function addExpense(expense: Expense) {
@@ -31,7 +45,7 @@ async function addExpense(expense: Expense) {
     });
     const response = await res.json();
     console.log(response)
-    resync();
+    // resync();
 }
 
 async function deleteExpense(id: number) {
@@ -40,11 +54,12 @@ async function deleteExpense(id: number) {
     })
         .then(res => {
             if (res.status === 200) {
-                res.json().then(() => {
-                    store.update((expenses) => {
-                        return expenses.filter((e) => e.id !== id);
-                    });
-                })
+                // res.json().then(() => {
+                //     store.update((expenses) => {
+                //         return expenses.filter((e) => e.id !== id);
+                //     });
+                // })
+                console.log("Deleted")
             } else {
                 console.log("Error deleting expense")
             }
@@ -64,14 +79,15 @@ async function updateExpense(expense: Expense) {
             if (res.status === 200) {
                 res.json()
                     .then(expense => {
-                        store.update((expenses) => {
-                            return expenses.map((ex) => {
-                                if (ex.id === expense.id) {
-                                    return expense;
-                                }
-                                return ex;
-                            });
-                        });
+                        // store.update((expenses) => {
+                        //     return expenses.map((ex) => {
+                        //         if (ex.id === expense.id) {
+                        //             return expense;
+                        //         }
+                        //         return ex;
+                        //     });
+                        // });
+                        console.log("Updated")
                     })
             } else {
                 console.log("Error updating expense")
