@@ -1,29 +1,30 @@
 <script lang="ts">
     import {Button, Modal, Label, Input, Toggle, InputAddon, ButtonGroup, Helper} from 'flowbite-svelte';
-    import {expensesStore} from '$lib/stores/expensesStore.ts'
     import {DollarSolid, CalendarMonthSolid} from 'flowbite-svelte-icons';
     import {onDestroy, onMount} from 'svelte';
     import {type Unsubscriber} from "svelte/store";
+    import BillStore from "$lib/stores/billStore";
 
     export let modalOpen: boolean = false;
-    export let expenseId: string | null = null;
+    export let billId: string | null = null;
+    export let billStore: BillStore;
 
-    let expense: Expense | any = {};
-    let expenseActive: boolean = true;
-    let unsub: any = null;
+    let bill: Bill | any = {};
+    let billPaid: boolean = false;
+    let unsub: Promise<Unsubscriber> | null = null;
     let valid: boolean = false;
     let dayValid: boolean = false;
     let nameValid: boolean = false;
 
     onMount(() => {
-        if (expenseId) {
-            unsub = expensesStore.subscribe((expenses: Expense[]) => {
-                expense = expenses.find((expense: Expense) => expense.id === expenseId);
+        if (billId) {
+            unsub = billStore.subscribe((bills: Bill[]) => {
+                bill = bills.find((bill: Bill) => bill.id === billId);
             });
         } else {
-            expense = {
-                active: true,
-                due_day: null,
+            bill = {
+                paid: false,
+                day: null,
                 amount: null,
             };
         }
@@ -37,14 +38,14 @@
         }
     });
 
-    $: expenseActive = expense.active ? expense.active : false;
-    $: dayValid = expense.due_day > 0 && expense.due_day <= 31;
-    $: nameValid = expense.name && expense.name.length > 0;
+    $: billPaid = bill.paid ? bill.paid : false;
+    $: dayValid = bill.day > 0 && bill.day <= 31;
+    $: nameValid = bill.name && bill.name.length > 0;
     $: valid = dayValid && nameValid;
 
     function save() {
-        if (expense.id) {
-            expensesStore.update(expense)
+        if (bill.id) {
+            billStore.update(bill)
                 .then(() => {
                     modalOpen = false;
                 })
@@ -52,7 +53,7 @@
                     console.error(error);
                 });
         } else {
-            expensesStore.add(expense)
+            billStore.add(bill)
                 .then(() => {
                     modalOpen = false;
                 })
@@ -67,18 +68,18 @@
 
 <Modal bind:open={modalOpen} size="xs" autoclose={false} outsideclose class="w-full">
     <form class="flex flex-col space-y-6" action="#">
-        <h3 class="mb-4 text-xl font-medium text-gray-900 dark:text-white">Create/Edit Monthly Expense</h3>
+        <h3 class="mb-4 text-xl font-medium text-gray-900 dark:text-white">Create new Bill</h3>
         <div class="flex flex-col-2 space-x-10">
-            <Label  class="flex-auto">
+            <Label class="flex-auto">
                 <span>ID</span>
-                <Input type="text" class="flex-auto text-xs" name="id" value="{expenseId}" disabled/>
+                <Input type="text" class="flex-auto text-xs" name="id" value="{billId}" disabled/>
             </Label>
             <div>
                 <Label class="space-y-2">
-                    <span>Active</span>
+                    <span>Paid</span>
                     <Toggle
-                            bind:checked="{expenseActive}"
-                            on:change="{() => expense.active = !expense.active}"
+                            bind:checked="{billPaid}"
+                            on:change="{() => bill.paid = !bill.paid}"
                             color="green"
                             class="self-stretch pt-2.5"
                     />
@@ -91,7 +92,7 @@
                     type="text"
                     name="name"
                     placeholder="Rent, Internet, etc"
-                    bind:value="{expense.name}"
+                    bind:value="{bill.name}"
                     color="{nameValid ? 'base' : 'red'}"
                     required/>
             {#if !nameValid}
@@ -110,7 +111,7 @@
                         type="number"
                         name="due_day"
                         placeholder="Which day of the mounth it is due"
-                        bind:value="{expense.due_day}"
+                        bind:value="{bill.day}"
                         color="{dayValid ? 'base' : 'red'}"
                         required/>
             </ButtonGroup>
@@ -130,7 +131,7 @@
                         type="number"
                         name="amount"
                         placeholder="100.00"
-                        bind:value="{expense.amount}"
+                        bind:value="{bill.amount}"
                 />
             </ButtonGroup>
         </div>

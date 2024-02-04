@@ -38,7 +38,9 @@
 	},
 	"type": "module",
 	"dependencies": {
+		"array-sort": "^1.0.0",
 		"axios": "^1.6.5",
-		"svelte-icons-pack": "^2.1.0"
+		"svelte-icons-pack": "^2.1.0",
+		"uuid": "^9.0.1"
 	}
 }

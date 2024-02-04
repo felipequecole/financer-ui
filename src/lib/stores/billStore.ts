@@ -7,24 +7,26 @@ import {
     type Invalidator,
     type Unsubscriber
 } from 'svelte/store';
-import arraySort from "array-sort";
+import arraySort from 'array-sort';
 import {v4 as uuidv4} from 'uuid';
 
 const api_url = import.meta.env.VITE_API_URL;
 
-class ExpenseStore {
-    store: Writable<Expense[]> | undefined;
-    sorted: Readable<Expense[]> | undefined;
+class BillStore {
+
+    store: Writable<Bill[]> | undefined;
+    sorted: Readable<Bill[]> | undefined;
     clients: Map<string, Unsubscriber> | undefined;
     socket: WebSocket | undefined;
+    month_id: string;
 
-    constructor() {
-        this.clients = new Map<string, Unsubscriber>();
+    constructor(month_id: string) {
+        this.month_id = month_id;
     }
 
-    initWebSocket() {
+    initWebSocket(month_id: string) {
         console.log('Initializing websocket')
-        this.socket = new WebSocket(`ws://${api_url}/expenses/ws`)
+        this.socket = new WebSocket(`ws://${api_url}/bill/ws/${month_id}`)
         this.socket.addEventListener("open", () => {
             console.log("Opened")
         });
@@ -34,27 +36,28 @@ class ExpenseStore {
             console.log(message)
             if (this.store) {
                 if (message.action == 'delete') {
-                    this.store.update((expenses) => {
-                        return expenses.filter((e) => e.id !== message.data.id);
+                    this.store.update((bills) => {
+                        return bills.filter((e) => e.id !== message.data.id);
                     });
                 } else {
-                    this.store.update((expenses) => {
-                        const sliced = expenses.filter((e) => e.id !== message.data.id);
+                    this.store.update((bills) => {
+                        const sliced = bills.filter((e) => e.id !== message.data.id);
                         return [...sliced, message.data];
                     });
                 }
             }
+
         });
     }
 
-    async subscribe(run: Subscriber<Expense[]>, invalidate?: Invalidator<Expense[]> | undefined) {
-        console.log('Subscribing to expenses')
+    async subscribe(run: Subscriber<Bill[]>, invalidate?: Invalidator<Bill[]> | undefined) {
+        console.log('Subscribing')
         if (!this.store) {
-            this.store = writable(await fetchExpenses());
+            this.store = writable(await fetchBills(this.month_id));
         }
         if (!this.sorted) {
-            this.sorted = derived(this.store, (expenses) => {
-                return arraySort(expenses, ['due_day', 'name', 'amount', 'id'], {
+            this.sorted = derived(this.store, (bill) => {
+                return arraySort(bill, ['day', 'name', 'amount', 'id'], {
                     reverse: false,
                     place: false,
                     algorithm: 'quick'
@@ -70,7 +73,7 @@ class ExpenseStore {
         this.clients.set(sub_id, this.sorted.subscribe(run, invalidate));
 
         if (!this.socket) {
-            this.initWebSocket();
+            this.initWebSocket(this.month_id);
         }
 
         return () => this.unsubscribe(sub_id);
@@ -87,15 +90,15 @@ class ExpenseStore {
         }
 
         if ((!this.clients || this.clients.size === 0) && this.socket) {
-            console.log('Closing expense update websocket')
+            console.log('Closing bill update websocket')
             this.socket.close();
         }
     }
 
-    async add(expense: Expense) {
-        fetch('http://localhost:8000/expenses', {
+    async add(bill: Bill) {
+        fetch(`http://${api_url}/bill/${this.month_id}`, {
             method: 'POST',
-            body: JSON.stringify(expense),
+            body: JSON.stringify(bill),
             headers: {
                 'Content-Type': 'application/json'
             }
@@ -105,23 +108,23 @@ class ExpenseStore {
     }
 
     async remove(id: string) {
-        fetch(`http://${api_url}/expenses/${id}`, {
+        fetch(`http://${api_url}/bill/${id}`, {
             method: 'DELETE'
         })
             .then(res => {
-                if (res.status === 200) {
+                if (res.status === 204) {
                     console.log("Deleted")
                 } else {
-                    console.log("Error deleting expense", res)
+                    console.log("Error deleting bill", res)
                 }
             })
             .catch(err => console.log(err));
     }
 
-    async update(expense: Expense) {
-        fetch(`http://${api_url}/expenses/${expense.id}`, {
+    async update(bill: Bill) {
+        fetch(`http://${api_url}/bill/${bill.id}`, {
             method: 'PATCH',
-            body: JSON.stringify(expense),
+            body: JSON.stringify(bill),
             headers: {
                 'Content-Type': 'application/json'
             }
@@ -133,25 +136,29 @@ class ExpenseStore {
                             console.log("Updated", bill)
                         })
                 } else {
-                    console.log("Error updating expense", res)
+                    console.log("Error updating bill")
                 }
             })
             .catch(err => console.log(err));
     }
 
-
 }
 
-type ExpenseResponse = {
-    data: Expense[]
+type BillResponse = {
+    data: Bill[]
 }
 
-async function fetchExpenses(): Promise<Expense[]> {
-    return fetch(`http://${api_url}/expenses?limit=50`)
+async function fetchBills(month_id: string): Promise<Bill[]> {
+    return await fetch(`http://${api_url}/bill/${month_id}?limit=50`)
         .then(res => res.json())
-        .then((data: ExpenseResponse) => {
+        .then((data: BillResponse) => {
             return data.data;
+        })
+        .catch(err => {
+            console.log(err);
+            return [];
         });
 }
 
-export const expensesStore = new ExpenseStore();
+
+export default BillStore;
