@@ -6,6 +6,8 @@ WORKDIR /app
 COPY package*.json pnpm-lock.yaml ./
 RUN pnpm install
 COPY . .
+ENV PUBLIC_API_URL="http://api:8000"
+
 RUN pnpm run build
 RUN pnpm prune --production
 
@@ -16,4 +18,6 @@ COPY --from=builder /app/node_modules node_modules/
 COPY package.json .
 EXPOSE 3000
 ENV NODE_ENV=production
+ENV PUBLIC_API_URL="api:8000"
+ENV VITE_API_URL="api:8000"
 CMD [ "node", "build" ]

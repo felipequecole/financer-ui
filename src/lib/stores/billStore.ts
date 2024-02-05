@@ -9,8 +9,9 @@ import {
 } from 'svelte/store';
 import arraySort from 'array-sort';
 import {v4 as uuidv4} from 'uuid';
+import {env} from "$env/dynamic/public";
 
-const api_url = import.meta.env.VITE_API_URL;
+const api_url = env.PUBLIC_API_URL;
 
 class BillStore {
 
