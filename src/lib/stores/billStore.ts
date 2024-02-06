@@ -21,6 +21,15 @@ class BillStore {
     socket: WebSocket | undefined;
     month_id: string;
 
+    static async exists(month_id: string): Promise<boolean> {
+        return await fetch(`http://${api_url}/month/${month_id}`)
+            .then(res => res.status === 200)
+            .catch(err => {
+                console.log(err);
+                return false;
+            });
+    }
+
     constructor(month_id: string) {
         this.month_id = month_id;
     }

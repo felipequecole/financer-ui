@@ -94,7 +94,7 @@ class ExpenseStore {
     }
 
     async add(expense: Expense) {
-        fetch('http://localhost:8000/expenses', {
+        fetch(`http://${api_url}/expenses`, {
             method: 'POST',
             body: JSON.stringify(expense),
             headers: {
